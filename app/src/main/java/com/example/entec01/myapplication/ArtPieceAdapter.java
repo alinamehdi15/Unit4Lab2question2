@@ -1,8 +1,9 @@
 package com.example.entec01.myapplication;
 
+
 import android.content.Context;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,22 +13,18 @@ import android.widget.TextView;
 
 import java.util.List;
 
+public class ArtPieceAdapter extends RecyclerView.Adapter<ArtPieceAdapter.ViewHolder> {
+    private List<ArtPiece> artPieces;
+    private static final String TAG = "ArtPieceAdapter";
+    ArtPieceListFragment.OnArtPieceSelectedListener mListener;
 
-/**
- * Created by Entec01 on 2/7/2018.
- */
-
-public class ArtPieceAdapter extends RecyclerView.Adapter <ArtPieceAdapter.ViewHolder> {
-
-    private List<ArtPiece> artPieceList;
-    private Context context;
-
-    public ArtPieceAdapter(List<ArtPiece> artPieceList) {
-        this.artPieceList = artPieceList;
+    public ArtPieceAdapter(List<ArtPiece> artPieces, ArtPieceListFragment.OnArtPieceSelectedListener mListener) {
+        this.artPieces = artPieces;
+        this.mListener = mListener;
     }
-//inflates the rows and returns a holder
+    // Inflates the row layout and returns a holder
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public ArtPieceAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Context context = parent.getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
 
@@ -36,38 +33,59 @@ public class ArtPieceAdapter extends RecyclerView.Adapter <ArtPieceAdapter.ViewH
         return new ViewHolder(artPieceView);
     }
 
+    // Populates data into the item through holder
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
-        ArtPiece artPiece = artPieceList.get(position);
-        holder.NameTextView.setText ( artPiece.getName());
-        holder.ArtistTextView.setText ( artPiece.getArtist());
-        holder.YearTextView.setText ( Integer.toString(artPiece.getYear()));
+    public void onBindViewHolder(ArtPieceAdapter.ViewHolder holder, int position) {
+        ArtPiece artPiece = artPieces.get(position);
+        holder.nameTextView.setText(artPiece.getName());
+        holder.artistTextView.setText(artPiece.getArtist());
+        holder.yearTextView.setText(Integer.toString(artPiece.getYear()));
         holder.imageView.setImageResource(artPiece.getPictureID());
     }
 
     @Override
     public int getItemCount() {
-
-        return artPieceList.size();
+        return artPieces.size();
     }
 
-    //holds all the field in one row
-    public class ViewHolder extends RecyclerView.ViewHolder{
-
-        public TextView NameTextView;
-        public TextView ArtistTextView;
-        public TextView YearTextView;
-        public Button CheckItOutButtonButton;
+    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener {
+        //Fields corresponding to the row layout elements
+        public TextView nameTextView;
+        public TextView artistTextView;
+        public TextView yearTextView;
+        public Button checkItOutButton;
         public ImageView imageView;
 
         public ViewHolder(View itemView) {
             super(itemView);
-            NameTextView = (TextView) itemView.findViewById(R.id.nameTextView);
-            ArtistTextView = (TextView) itemView.findViewById(R.id.artistTextView);
-            YearTextView = (TextView) itemView.findViewById(R.id.yearTextView);
-            CheckItOutButtonButton = (Button) itemView.findViewById(R.id.checkItOutButton);
+            nameTextView = (TextView) itemView.findViewById(R.id.nameTextView);
+            artistTextView = (TextView) itemView.findViewById(R.id.artistTextView);
+            yearTextView = (TextView) itemView.findViewById(R.id.yearTextView);
+            checkItOutButton = (Button) itemView.findViewById(R.id.checkItOutButton);
             imageView = (ImageView) itemView.findViewById(R.id.imageView);
+            itemView.setOnClickListener(this);
+            itemView.setOnLongClickListener(this);
+            checkItOutButton.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View view) {
+            int position = getAdapterPosition();
+            if (position != RecyclerView.NO_POSITION){
+                Log.d(TAG, "Row or Button for "+artPieces.get(position).getName()+" was clicked");
+                mListener.onArtPieceSelected(position);
+            }
+        }
+
+        @Override
+        public boolean onLongClick(View view) {
+            int position = getAdapterPosition();
+            if (position != RecyclerView.NO_POSITION){
+                Log.d(TAG, "Button for "+artPieces.get(position).getName()+" was looooooong clicked");
+                mListener.onArtPieceSelected(position);
+                return true;
+            }
+            return false;
         }
     }
-
 }
