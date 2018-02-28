@@ -1,11 +1,14 @@
 package com.example.entec01.myapplication;
 
+import android.app.FragmentManager;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,13 +17,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class GalleryFragment extends Fragment {
+public class GalleryFragment extends Fragment implements ArtPieceListFragment.OnArtPieceSelectedListener{
     private static final String TAG = "GalleryFragment";
-
+    private boolean isLandscape;
     private List<ArtPiece> artPieces;
-    private ArtPieceAdapter adapter;
-    private RecyclerView recyclerView;
+    private boolean showList;
+    private int position;
 
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        showList = true;
+        super.onCreate(savedInstanceState);//other nested frags are attached and created
+    }
 
 
     @Override
@@ -32,24 +40,54 @@ public class GalleryFragment extends Fragment {
         artPieces = new ArrayList<>();
         populateListOfArtPieces();
 
-        //Lookup the recyclerview
-        recyclerView = (RecyclerView) view.findViewById(R.id.rv_art_pieces);
-        // Create adapter passing in the data
-        adapter = new ArtPieceAdapter(artPieces);
-        // Attach the adapter to the recyclerview to populate items
-        recyclerView.setAdapter(adapter);
-        // Set layout manager to position the items
-        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        // Add dividers between each row
-        //RecyclerView.ItemDecoration itemDecoration = new
-        //        DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
-        //recyclerView.addItemDecoration(itemDecoration);
+        if(view.findViewById(R.id.container2) != null){
+            isLandscape = true;
+            position = 0;
+        } else {
+            isLandscape = false;
+        }
 
-        //recyclerView.setItemAnimator(new DefaultItemAnimator())
+        if(savedInstanceState != null) {
+            position = savedInstanceState.getInt("artPiece");
+            showList = savedInstanceState.getBoolean("showList");
+        }
+
+        if(isLandscape) {
+            FragmentTransaction ft = getChildFragmentManager().beginTransaction();
+            ArtPieceListFragment listFragment = ArtPieceListFragment.newInstance(artPieces);
+            ft.replace(R.id.container, listFragment);
+            ft.addToBackStack("listFragment");
+            ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+
+            ArtPieceFragment artPieceFragment = ArtPieceFragment.newInstance(artPieces.get(position));
+            ft.replace(R.id.container2, artPieceFragment);
+            ft.addToBackStack("artPieceFragment");
+            ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+            ft.commit();
+
+        } else {
+            if (showList) {
+
+                FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
+                ArtPieceListFragment listFragment = ArtPieceListFragment.newInstance(artPieces);
+                transaction.replace(R.id.container, listFragment);
+                transaction.addToBackStack("listFragment");
+                transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                transaction.commit();
+            } else {
+
+                FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
+                ArtPieceFragment artPieceFragment = ArtPieceFragment.newInstance(artPieces.get(position));
+                transaction.replace(R.id.container, artPieceFragment);
+                transaction.addToBackStack("artPieceFragment");
+                transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                transaction.commit();
+            }
+        }
+
         return view;
 
     }
-
     private void populateListOfArtPieces() {
         ArtPiece ap1 = new ArtPiece("Mona Lisa", "Leonardo da Vinci", 1503, R.drawable.monalisa);
         artPieces.add(ap1);
@@ -81,13 +119,47 @@ public class GalleryFragment extends Fragment {
         artPieces.add(ap14);
     }
 
-    public void addArtPiece(View view) {
-        //Add a new item to the data source at position 0
-        artPieces.add(0, new ArtPiece("Venus de Milo", "Alexandros of Antioch", -101, R.drawable.venusdemilo));
-        // Notify the adapter that an item was inserted at position 0
-        adapter.notifyItemInserted(0);
-        //Scroll to the position where the new item was inserted
-        recyclerView.scrollToPosition(0);
+
+    @Override
+    public void onArtPieceSelected(int pos) {
+        showList = false;
+        position = pos;
+
+        if(isLandscape){
+            FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
+            ArtPieceFragment artPieceFragment = ArtPieceFragment.newInstance(artPieces.get(position));
+            transaction.replace(R.id.container2, artPieceFragment);
+            transaction.addToBackStack("artPieceFragment");
+            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+            transaction.commit();
+        } else{
+            FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
+            ArtPieceFragment artPieceFragment = ArtPieceFragment.newInstance(artPieces.get(position));
+            transaction.replace(R.id.container, artPieceFragment);
+            transaction.addToBackStack("artPieceFragment");
+            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+            transaction.commit();
+        }
+
     }
 
+    /**
+     * @return true = if this fragment can handle the backPress
+     */
+    public boolean onBackPressed() {
+        if(!showList && !isLandscape) {
+            getChildFragmentManager().popBackStackImmediate("artPieceFragment", FragmentManager.POP_BACK_STACK_INCLUSIVE);
+            showList = true;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("artPiece", position);
+        outState.putBoolean("showList", showList);
+    }
 }
